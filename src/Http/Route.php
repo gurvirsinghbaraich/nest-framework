@@ -2,35 +2,23 @@
 
 namespace Nest\Framework\Http;
 
-use Exception;
-use Nest\Framework\Foundation\Application;
-use PHPUnit\TextUI\XmlConfiguration\RenameForceCoversAnnotationAttribute;
-
 class Route
 {
   /**
-   * This property is used to store the current HTTP request being processed by
-   * the applicaiton. It provides access to request data, such as input parameters,
-   * headers and other metadata.
+   * Stores the current HTTP request being processed by the application.
+   * Provides access to request data such as input parameters, headers, and other metadata.
    */
   private static Request $request;
 
   /**
-   * This array lists he HTTP methods that the application supports fr router handling.
-   * It is used to define which HTTP methods can be registered and processed by the
-   * routing system.
+   * Lists the HTTP methods that the application supports for route handling.
+   * Used to define which HTTP methods can be registered and processed by the routing system.
    */
-  private static array $methods = [
-    "GET",
-    "POST",
-  ];
+  private static array $methods = ["GET", "POST"];
 
   /**
-   * Stores routes for the application in a static array. This array holds
-   * different HTTP methods (GET and POST) as keys, and their corresponding
-   * routes as values. 
-   * 
-   * As routes are defined in teh application, they will be added to these arrays.
+   * Stores routes for the application. Different HTTP methods (GET and POST)
+   * are used as keys, and their corresponding routes are stored as values.
    */
   private static array $routes = [
     "GET" => [],
@@ -38,9 +26,8 @@ class Route
   ];
 
   /**
-   * The constructor is used to assign a value to $reqeust property. This allows
-   * RequestHandler (__destructor) to have reference to the current HTTP request
-   * bein process, enabling it to access the data throughtout the application.
+   * Constructor to assign a value to the $request property.
+   * Allows RequestHandler (__destructor) to have a reference to the current HTTP request.
    */
   public function __construct(Request $request)
   {
@@ -48,52 +35,7 @@ class Route
   }
 
   /**
-   * It takes the HTTP method (e.g., GET or POST), the path of the route, 
-   * and a handler that will handle the request when it matches the route. If the
-   * HTTP method is defined, the the function will add the request to appropriate array.
-   */
-  private static function publishRoute(string $method, string $path, $handler): void
-  {
-    // Check if the provided HTTP method exists in the $routes array.
-    if (isset(Route::$routes[$method])) {
-      // Asserting whether the handler is an array, hence an anonymus function.
-      if (is_array($handler)) {
-        // The handler must reference a class, and method
-        if (!isset($handler[0])) {
-          throw new \Exception("No handler class provided for the route: '$path'. Please ensure a valid handler is specified for this route.");
-        }
-
-        // The handler must reference a method for the class provided.
-        if (!isset($handler[1])) {
-          throw new \Exception("The handler method '{$handler[0]}' is not provided for the route: '{$path}'. Please ensure that the handler method is correctly defined and accessible for this route.");
-        }
-
-        $handlerClass = $handler[0];
-        $handlerMethod = $handler[1];
-
-        if (!class_exists($handlerClass)) {
-          throw new \Exception("The handler class '{$handlerClass}' does not exist. Please ensure that the class name is correct and the class is properly included or autoloaded.");
-        }
-
-        if (!method_exists($handlerClass, $handlerMethod)) {
-          throw new \Exception("The handler method '{$handlerMethod}' does not exist. Please ensure that the method name is correct and the method is properly defined within the handler class.");
-        }
-      }
-
-      // Make sure that the passed handler is callable.
-      else if (!is_callable($handler)) {
-        throw new \Exception("The provided handler is not callable. Please pass a valid function or method as the handler.");
-      }
-
-      // Add the route path and its handler to the respective HTTP method array.
-      Route::$routes[$method][] = [$path, $handler];
-    }
-  }
-
-  /**
-   * This method allows the registration of a route that responds to GET requests.
-   * It takes the path of the route and a handler, and delegates the task to the
-   * publishRoute method with the HTTP method set to GET.
+   * Registers a route for the GET HTTP method.
    */
   public static function GET(string $path, $handler): void
   {
@@ -101,9 +43,7 @@ class Route
   }
 
   /**
-   * This method allows the registration of a route that responds to POST requests.
-   * It takes the path of the route and a handler, and delegates the task to the
-   * publishRoute method with the HTTP method set to POST.
+   * Registers a route for the POST HTTP method.
    */
   public static function POST(string $path, $handler): void
   {
@@ -111,10 +51,7 @@ class Route
   }
 
   /**
-   * This method allows the registeration of a route that responds to any HTTP requests.
-   * It takes the path of the route and a handler, and deletegates the task to the
-   * publishRoute method with each HTTP method listed that are supported by the 
-   * routing system.
+   * Registers a route for any supported HTTP method.
    */
   public static function ANY(string $path, $handler): void
   {
@@ -123,28 +60,70 @@ class Route
     }
   }
 
+  /**
+   * Publishes a route for the specified HTTP method.
+   */
+  private static function publishRoute(string $method, string $path, $handler): void
+  {
+    // Check if the provided HTTP method exists in the $routes array.
+    if (isset(Route::$routes[$method])) {
+      // Validate the handler.
+      Route::validateHandler($handler);
+
+      // Add the route path and its handler to the respective HTTP method array.
+      Route::$routes[$method][] = [$path, $handler];
+    }
+  }
+
+  /**
+   * Validates the handler for a route.
+   */
+  private static function validateHandler($handler): void
+  {
+    // Validate if the handler is an array (likely a class method).
+    if (is_array($handler)) {
+      // Ensure the class and method are specified.
+      if (!isset($handler[0]) || !isset($handler[1])) {
+        throw new \Exception("Invalid handler format. Please provide both class and method for the handler.");
+      }
+
+      // Ensure the class exists.
+      if (!class_exists($handler[0])) {
+        throw new \Exception("The handler class '{$handler[0]}' does not exist.");
+      }
+
+      // Ensure the method exists in the class.
+      if (!method_exists($handler[0], $handler[1])) {
+        throw new \Exception("The handler method '{$handler[1]}' does not exist in class '{$handler[0]}'.");
+      }
+    } elseif (!is_callable($handler)) {
+      // Ensure the handler is callable.
+      throw new \Exception("The provided handler is not callable. Please pass a valid function or method.");
+    }
+  }
+
+  /**
+   * Extracts variables from a route path.
+   */
   public static function getVariables(string $path)
   {
     $regex = '/:(\w+)/m';
-
     preg_match_all($regex, $path, $matches, PREG_SET_ORDER, 0);
     return $matches;
   }
 
+  /**
+   * Extracts variables from a route and returns them.
+   */
   public static function getRouteVariables(array $route)
   {
     $path = $route[0];
-    $variables = Route::getVariables($path);
-
-    return $variables;
+    return Route::getVariables($path);
   }
 
-
   /**
-   * A destructor is a function that is called
-   * when the instance of the class is destructed
-   * 
-   * @docs https://www.php.net/manual/en/language.oop5.decon.php
+   * Destructor to handle route resolution.
+   * Matches the requested URI with registered routes.
    */
   public function __destruct()
   {
@@ -195,7 +174,7 @@ class Route
 
     // If no route matched the requested URI, return a 404 response.
     http_response_code(404); // Set the HTTP response code to 404 (Not Found).
-    echo view('errors/404');
-    die();
+    echo view('errors/404'); // Return a view for 404 Not Found.
+    die(); // Terminate the script.
   }
 }

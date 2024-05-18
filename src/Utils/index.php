@@ -1,8 +1,11 @@
 <?php
 
-use Nest\Framework\Foundation\ApplicationBuilder;
+use Nest\Framework\Views\Engine;
 
-function view(string $templateName, array $variables = [])
+/**
+ * Render a view using Blade template engine.
+ */
+function view(string $templateName, array $variables = []): string
 {
-  ApplicationBuilder::blade()->render($templateName, $variables);
+  return Engine::render($templateName, $variables);
 }
