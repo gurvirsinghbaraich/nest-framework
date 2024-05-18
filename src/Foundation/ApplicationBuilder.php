@@ -2,6 +2,9 @@
 
 namespace Nest\Framework\Foundation;
 
+use Nest\Framework\Http\Request;
+use Nest\Framework\Http\Route;
+
 class ApplicationBuilder
 {
   public function __construct(string $basePath)
@@ -12,5 +15,13 @@ class ApplicationBuilder
     }
 
     return $this;
+  }
+
+  /**
+   * Handle the incoming request and return a response.
+   */
+  public function handleRequest(Request $request)
+  {
+    $response = new Route($request);
   }
 }

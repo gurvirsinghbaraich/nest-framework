@@ -3,7 +3,7 @@
 namespace Nest\Framework\Foundation;
 
 use Exception;
-use Nest\Framework\Contracts\Application as ApplicationContract;
+use Nest\Framework\Contracts\Foundation\Application as ApplicationContract;
 
 
 class Application implements ApplicationContract

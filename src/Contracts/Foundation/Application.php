@@ -1,6 +1,7 @@
 <?php
 
-namespace Nest\Framework\Contracts;
+namespace Nest\Framework\Contracts\Foundation;
+
 
 interface Application
 {
