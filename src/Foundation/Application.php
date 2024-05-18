@@ -11,7 +11,7 @@ class Application implements ApplicationContract
   /**
    * The installed version of the Nest Framework.
    */
-  const VERSION = "0.0.13";
+  const VERSION = "0.0.14";
 
   /**
    * The basae path for the Nest installation.

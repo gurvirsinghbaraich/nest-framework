@@ -173,8 +173,8 @@ class Route
     }
 
     // If no route matched the requested URI, return a 404 response.
-    http_response_code(404); // Set the HTTP response code to 404 (Not Found).
     echo view('errors/404'); // Return a view for 404 Not Found.
+    http_response_code(404); // Set the HTTP response code to 404 (Not Found).
     die(); // Terminate the script.
   }
 }
