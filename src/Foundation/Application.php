@@ -11,7 +11,7 @@ class Application implements ApplicationContract
   /**
    * The installed version of the Nest Framework.
    */
-  const VERSION = "0.0.1";
+  const VERSION = "0.0.101";
 
   /**
    * The basae path for the Nest installation.
@@ -21,7 +21,7 @@ class Application implements ApplicationContract
   /**
    * Indicates whether the application has been booted.
    */
-  protected bool $booted = false;
+  protected static bool $booted = false;
 
   /**
    * Gets the version number for the application.
@@ -32,34 +32,19 @@ class Application implements ApplicationContract
   }
 
   /**
-   * Gets the basePath for the Nest installation.
-   */
-  public function basePath(): string
-  {
-    return $this->basePath();
-  }
-
-  /**
    * Creating configuration for the Nest application.
    */
   public static function configure(string $basePath)
   {
-    // Asserting to be sure of the fact that,
-    // $basePath is of a string type.
-
-    $basePath = match (true) {
-      is_string($basePath) => $basePath,
-      default => throw new \Exception('TypeError: Invalid type for $basePath. Expected a string, but reveived ' + gettype($basePath) + '.')
-    };
-
-    // TODO: Run the application
+    return new ApplicationBuilder($basePath);
   }
 
   /**
    * Function to boot the application.
    */
-  public function boot(): void
+  public static function boot(): void
   {
-    // TODO: Implement the logic, to start the application.
+    // Marking the application as booted.
+    self::$booted = true;
   }
 }

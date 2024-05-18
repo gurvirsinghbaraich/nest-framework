@@ -10,12 +10,7 @@ interface Application
   public function version(): string;
 
   /**
-   * Gets the basePath for the Nest installation.
-   */
-  public function basePath(): string;
-
-  /**
    * Boot's the application.
    */
-  public function boot(): void;
+  public static function boot(): void;
 }
