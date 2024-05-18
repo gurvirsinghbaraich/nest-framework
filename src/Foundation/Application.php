@@ -32,10 +32,21 @@ class Application implements ApplicationContract
   }
 
   /**
+   * Registering handler for the Nest Framework.
+   */
+  private static function registerErrorHandler()
+  {
+    $whoops = new \Whoops\Run;
+    $whoops->pushHandler(new \Whoops\Handler\PrettyPageHandler);
+    $whoops->register();
+  }
+
+  /**
    * Creating configuration for the Nest application.
    */
   public static function configure(string $basePath)
   {
+    Application::registerErrorHandler();
     return new ApplicationBuilder($basePath);
   }
 
@@ -45,6 +56,6 @@ class Application implements ApplicationContract
   public static function boot(): void
   {
     // Marking the application as booted.
-    self::$booted = true;
+    Application::$booted = true;
   }
 }
