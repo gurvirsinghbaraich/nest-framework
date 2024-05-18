@@ -4,7 +4,7 @@ namespace Nest\Framework\Foundation;
 
 use Exception;
 use Nest\Framework\Contracts\Foundation\Application as ApplicationContract;
-
+use Nest\Framework\Utils\UtilsLoader;
 
 class Application implements ApplicationContract
 {
@@ -16,12 +16,23 @@ class Application implements ApplicationContract
   /**
    * The basae path for the Nest installation.
    */
-  protected string $basePath;
+  protected static string $basePath;
+  protected static string $templatePath;
 
   /**
    * Indicates whether the application has been booted.
    */
   protected static bool $booted = false;
+
+  public static function basePath()
+  {
+    return Application::$basePath;
+  }
+
+  public static function templatePath()
+  {
+    return Application::$templatePath;
+  }
 
   /**
    * Gets the version number for the application.
@@ -47,6 +58,11 @@ class Application implements ApplicationContract
   public static function configure(string $basePath)
   {
     Application::registerErrorHandler();
+
+    Application::$basePath = $basePath;
+    Application::$templatePath = $basePath . '/templates';
+    UtilsLoader::load();
+
     return new ApplicationBuilder($basePath);
   }
 

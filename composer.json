@@ -20,6 +20,7 @@
     "symfony/var-dumper": "^7.0"
   },
   "require": {
-    "filp/whoops": "^2.15"
+    "filp/whoops": "^2.15",
+    "jenssegers/blade": "^2.0"
   }
 }

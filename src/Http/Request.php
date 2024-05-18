@@ -6,6 +6,8 @@ use Nest\Framework\Contracts\Http\Request as RequestContract;
 
 class Request implements RequestContract
 {
+  private static array $params = [];
+
   /**
    * Gets whether the request has been made 
    * from http or https origin.
@@ -24,10 +26,31 @@ class Request implements RequestContract
   }
 
   /**
+   * Gets the request URI.
+   */
+  public static function uri()
+  {
+    return $_SERVER['REQUEST_URI'];
+  }
+
+  /**
    * Returns an instance of itself.
    */
   public static function capture()
   {
     return new self();
+  }
+
+  public static function getParams()
+  {
+    return Request::$params;
+  }
+
+  public static function setParams(string $key, $value): void
+  {
+    echo $key;
+    echo $value;
+    echo "\n";
+    Request::$params[$key] = $value;
   }
 }

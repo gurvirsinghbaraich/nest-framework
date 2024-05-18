@@ -3,6 +3,8 @@
 namespace Nest\Framework\Http;
 
 use Exception;
+use Nest\Framework\Foundation\Application;
+use PHPUnit\TextUI\XmlConfiguration\RenameForceCoversAnnotationAttribute;
 
 class Route
 {
@@ -42,7 +44,7 @@ class Route
    */
   public function __construct(Request $request)
   {
-    self::$request = $request;
+    Route::$request = $request;
   }
 
   /**
@@ -53,7 +55,7 @@ class Route
   private static function publishRoute(string $method, string $path, $handler): void
   {
     // Check if the provided HTTP method exists in the $routes array.
-    if (isset(self::$routes[$method])) {
+    if (isset(Route::$routes[$method])) {
       // Asserting whether the handler is an array, hence an anonymus function.
       if (is_array($handler)) {
         // The handler must reference a class, and method
@@ -79,12 +81,12 @@ class Route
       }
 
       // Make sure that the passed handler is callable.
-      if (!is_callable($handler)) {
+      else if (!is_callable($handler)) {
         throw new \Exception("The provided handler is not callable. Please pass a valid function or method as the handler.");
       }
 
       // Add the route path and its handler to the respective HTTP method array.
-      self::$routes[$method][] = [$path, $handler];
+      Route::$routes[$method][] = [$path, $handler];
     }
   }
 
@@ -95,7 +97,7 @@ class Route
    */
   public static function GET(string $path, $handler): void
   {
-    self::publishRoute("GET", $path, $handler);
+    Route::publishRoute("GET", $path, $handler);
   }
 
   /**
@@ -105,7 +107,7 @@ class Route
    */
   public static function POST(string $path, $handler): void
   {
-    self::publishRoute("POST", $path, $handler);
+    Route::publishRoute("POST", $path, $handler);
   }
 
   /**
@@ -116,10 +118,27 @@ class Route
    */
   public static function ANY(string $path, $handler): void
   {
-    foreach (self::$methods as $method) {
-      self::publishRoute($method, $path, $handler);
+    foreach (Route::$methods as $method) {
+      Route::publishRoute($method, $path, $handler);
     }
   }
+
+  public static function getVariables(string $path)
+  {
+    $regex = '/:(\w+)/m';
+
+    preg_match_all($regex, $path, $matches, PREG_SET_ORDER, 0);
+    return $matches;
+  }
+
+  public static function getRouteVariables(array $route)
+  {
+    $path = $route[0];
+    $variables = Route::getVariables($path);
+
+    return $variables;
+  }
+
 
   /**
    * A destructor is a function that is called
@@ -129,16 +148,54 @@ class Route
    */
   public function __destruct()
   {
-    // Getting the routes that are appropriate for the request type.
-    $requestMethod = self::$request->method();
+    // Get the current request URI and method.
+    $requestURI = Route::$request->uri();
+    $requestMethod = Route::$request->method();
 
-    if (!isset(self::$routes[$requestMethod])) {
-      http_response_code(405);
-
-      // TODO: Return HTML for 405 request.
+    // Check if the request method is supported.
+    if (!isset(Route::$routes[$requestMethod])) {
+      http_response_code(405); // Set the HTTP response code to 405 (Method Not Allowed).
+      echo "405 Method Not Allowed"; // Return a message for 405 Method Not Allowed.
       return;
     }
 
-    $routes = self::$routes[$requestMethod];
+    // Get the routes for the current request method.
+    $routes = Route::$routes[$requestMethod];
+
+    // Iterate over the routes to find a match for the request URI.
+    foreach ($routes as $route) {
+      // Extract route variables (e.g., parameters in the URI).
+      $variables = Route::getRouteVariables($route);
+
+      // If the route contains variables, process them.
+      if (count($variables) > 0) {
+        // Construct a regex to match the route with variables.
+        $regexBase = str_repeat('\/(\w+)', count($variables));
+        $regex = "/" . $regexBase . "/m";
+
+        // Match the regex against the request URI.
+        preg_match_all($regex, $requestURI, $mappings, PREG_SET_ORDER, 0);
+
+        // If a matching route is found, set the parameters.
+        if (count($mappings) > 0) {
+          foreach ($variables as $key => $variable) {
+            $variableName = $variable[1];
+            $variableValue = $mappings[0][$key + 1];
+            Request::setParams($variableName, $variableValue); // Set the route parameters in the request.
+          }
+          return; // Exit the function if a match is found.
+        }
+      } else {
+        // If the route has no variables and matches exactly, return.
+        if ($route === $requestURI) {
+          return; // Exit the function if an exact match is found.
+        }
+      }
+    }
+
+    // If no route matched the requested URI, return a 404 response.
+    http_response_code(404); // Set the HTTP response code to 404 (Not Found).
+    echo view('errors/404');
+    die();
   }
 }
