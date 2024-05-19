@@ -2,6 +2,9 @@
 
 namespace Nest\Framework\Http;
 
+use ReflectionClass;
+use ReflectionFunction;
+
 class Route
 {
   /**
@@ -31,6 +34,7 @@ class Route
    */
   public function __construct(Request $request)
   {
+    session_start();
     Route::$request = $request;
   }
 
@@ -121,6 +125,51 @@ class Route
     return Route::getVariables($path);
   }
 
+  private function getFunctionHandlerDependancies($handler)
+  {
+    $reflectionClass = new ReflectionFunction($handler);
+    $parameters = $reflectionClass->getParameters();
+
+    $arguments = [];
+
+    foreach ($parameters as $parameter) {
+      $dependancy = $parameter->getType()->getName();
+      $arguments[] = new $dependancy;
+    }
+
+    return $arguments;
+  }
+
+  private function getHandlerDependancies(string $class, string $method)
+  {
+    $reflectionClass = new ReflectionClass($class);
+    $parameters = $reflectionClass->getMethod($method)->getParameters();
+    $arguments = [];
+
+    foreach ($parameters as $parameter) {
+      $dependancy = $parameter->getType()->getName();
+      $arguments[] = new $dependancy;
+    }
+
+    return $arguments;
+  }
+
+  function getHandlerResponse($handler)
+  {
+    if (is_callable($handler)) {
+      return call_user_func($handler, ...($this->getFunctionHandlerDependancies($handler)));
+    }
+
+    $className = $handler[0];
+    $methodName = $handler[1];
+    $dependancies = $this->getHandlerDependancies($className, $methodName);
+
+    return call_user_func(
+      array(new $className, $methodName),
+      ...$dependancies
+    );
+  }
+
   /**
    * Destructor to handle route resolution.
    * Matches the requested URI with registered routes.
@@ -133,9 +182,12 @@ class Route
 
     // Check if the request method is supported.
     if (!isset(Route::$routes[$requestMethod])) {
-      http_response_code(405); // Set the HTTP response code to 405 (Method Not Allowed).
-      echo "405 Method Not Allowed"; // Return a message for 405 Method Not Allowed.
-      return;
+      echo view('errors.http', [
+        'statusCode' => 405,
+        'statusMessage' => "Method Not Allowed"
+      ]);
+
+      die();
     }
 
     // Get the routes for the current request method.
@@ -162,19 +214,24 @@ class Route
             $variableValue = $mappings[0][$key + 1];
             Request::setParams($variableName, $variableValue); // Set the route parameters in the request.
           }
-          return; // Exit the function if a match is found.
+          echo $this->getHandlerResponse($route[1]); // Exit the function if a match is found.
+          exit;
         }
       } else {
         // If the route has no variables and matches exactly, return.
-        if ($route === $requestURI) {
-          return; // Exit the function if an exact match is found.
+        if ($route[0] === $requestURI) {
+          echo $this->getHandlerResponse($route[1]); // Exit the function if an exact match is found.
+          exit;
         }
       }
     }
 
     // If no route matched the requested URI, return a 404 response.
-    echo view('errors/404'); // Return a view for 404 Not Found.
-    http_response_code(404); // Set the HTTP response code to 404 (Not Found).
-    die(); // Terminate the script.
+    echo view('errors.http', [
+      'statusCode' => 404,
+      'statusMessage' => "Page Not Found"
+    ]);
+
+    die();
   }
 }

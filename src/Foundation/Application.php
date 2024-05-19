@@ -4,6 +4,7 @@ namespace Nest\Framework\Foundation;
 
 use Exception;
 use Nest\Framework\Contracts\Foundation\Application as ApplicationContract;
+use Nest\Framework\Http\Request;
 use Nest\Framework\Utils\UtilsLoader;
 
 class Application implements ApplicationContract
@@ -11,7 +12,7 @@ class Application implements ApplicationContract
   /**
    * The installed version of the Nest Framework.
    */
-  const VERSION = "0.0.16";
+  const VERSION = "0.0.18";
 
   /**
    * The basae path for the Nest installation.
@@ -47,8 +48,14 @@ class Application implements ApplicationContract
    */
   private static function registerErrorHandler()
   {
+    $handler = \Whoops\Handler\PrettyPageHandler::class;
+
+    if (Request::method() === "POST") {
+      $handler = \Whoops\Handler\JsonResponseHandler::class;
+    }
+
     $whoops = new \Whoops\Run;
-    $whoops->pushHandler(new \Whoops\Handler\PrettyPageHandler);
+    $whoops->pushHandler(new $handler);
     $whoops->register();
   }
 

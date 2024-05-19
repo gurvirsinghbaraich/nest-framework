@@ -2,7 +2,6 @@
 
 namespace Nest\Framework\Foundation;
 
-use Jenssegers\Blade\Blade;
 use Nest\Framework\Http\Request;
 use Nest\Framework\Http\Route;
 
@@ -23,6 +22,6 @@ class ApplicationBuilder
    */
   public function handleRequest(Request $request)
   {
-    $response = new Route($request);
+    new Route($request);
   }
 }

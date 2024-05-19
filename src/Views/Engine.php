@@ -25,6 +25,6 @@ class Engine
    */
   public static function render(string $templateName, array $variables = []): string
   {
-    return self::blade()->render($templateName, $variables);
+    return self::blade()->make($templateName, $variables)->render();
   }
 }
