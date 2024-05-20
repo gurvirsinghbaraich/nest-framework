@@ -46,8 +46,20 @@ class Request implements RequestContract
     return Request::$params;
   }
 
-  public static function setParams(string $key, $value): void
+  public static  function setParams(array $params)
+  {
+    foreach ($params as $key => $value) {
+      Request::setParam($key, $value);
+    }
+  }
+
+  public static function setParam(string $key, string $value)
   {
     Request::$params[$key] = $value;
+  }
+
+  public function __set($name, $value)
+  {
+    Request::$params[$name] = $value;
   }
 }

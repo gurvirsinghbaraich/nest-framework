@@ -106,25 +106,6 @@ class Route
     }
   }
 
-  /**
-   * Extracts variables from a route path.
-   */
-  public static function getVariables(string $path)
-  {
-    $regex = '/:(\w+)/m';
-    preg_match_all($regex, $path, $matches, PREG_SET_ORDER, 0);
-    return $matches;
-  }
-
-  /**
-   * Extracts variables from a route and returns them.
-   */
-  public static function getRouteVariables(array $route)
-  {
-    $path = $route[0];
-    return Route::getVariables($path);
-  }
-
   private function getFunctionHandlerDependancies($handler)
   {
     $reflectionClass = new ReflectionFunction($handler);
@@ -170,6 +151,49 @@ class Route
     );
   }
 
+  public static function getVariablesFromRequest(string $URI, string $requestURI): null | array
+  {
+    $mappings = [];
+    $requestSections = explode("/", $URI);
+    $pathSections = explode("/", $requestURI);
+
+    if (count($requestSections) < count($pathSections)) {
+      return null;
+    }
+
+    foreach ($requestSections as $key => $section) {
+      if (str_contains($section, ":")) {
+        $mappingName = explode(":", $section)[1];
+        $mappings[$mappingName] = $pathSections[$key];
+      } else if ($section !== $pathSections[$key]) return null;
+    }
+
+    return $mappings;
+  }
+
+
+  public static function getMatchingRoute(array $routes, string $requestURI)
+  {
+    // Iterate over the routes to find a match for the request URI.
+    foreach ($routes as $route) {
+      // Extract route variables (e.g., parameters in the URI).
+      $mappings = Route::getVariablesFromRequest($route[0], $requestURI);
+
+      // If the route contains variables, process them.
+      if (is_array($mappings)) {
+        Request::setParams($mappings); // Set the route parameters in the request.
+        return $route;
+      } else {
+        // If the route has no variables and matches exactly, return.
+        if ($route[0] === $requestURI) {
+          return $route;
+        }
+      }
+    }
+
+    return null;
+  }
+
   /**
    * Destructor to handle route resolution.
    * Matches the requested URI with registered routes.
@@ -192,40 +216,12 @@ class Route
 
     // Get the routes for the current request method.
     $routes = Route::$routes[$requestMethod];
+    $matchingRoute = Route::getMatchingRoute($routes, $requestURI);
 
-    // Iterate over the routes to find a match for the request URI.
-    foreach ($routes as $route) {
-      // Extract route variables (e.g., parameters in the URI).
-      $variables = Route::getRouteVariables($route);
-
-      // If the route contains variables, process them.
-      if (count($variables) > 0) {
-        // Construct a regex to match the route with variables.
-        $regexBase = str_repeat('\/(\w+)', count($variables));
-        $regex = "/" . $regexBase . "/m";
-
-        // Match the regex against the request URI.
-        preg_match_all($regex, $requestURI, $mappings, PREG_SET_ORDER, 0);
-
-        // If a matching route is found, set the parameters.
-        if (count($mappings) > 0) {
-          foreach ($variables as $key => $variable) {
-            $variableName = $variable[1];
-            $variableValue = $mappings[0][$key + 1];
-            Request::setParams($variableName, $variableValue); // Set the route parameters in the request.
-          }
-          echo $this->getHandlerResponse($route[1]); // Exit the function if a match is found.
-          exit;
-        }
-      } else {
-        // If the route has no variables and matches exactly, return.
-        if ($route[0] === $requestURI) {
-          echo $this->getHandlerResponse($route[1]); // Exit the function if an exact match is found.
-          exit;
-        }
-      }
+    if ($matchingRoute) {
+      echo $this->getHandlerResponse($matchingRoute[1]);
+      exit;
     }
-
     // If no route matched the requested URI, return a 404 response.
     echo view('errors.http', [
       'statusCode' => 404,
