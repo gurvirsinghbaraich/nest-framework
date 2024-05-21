@@ -135,7 +135,7 @@ class Route
     return $arguments;
   }
 
-  function getHandlerResponse($handler)
+  private function getHandlerResponse($handler)
   {
     if (is_callable($handler)) {
       return call_user_func($handler, ...($this->getFunctionHandlerDependancies($handler)));
@@ -151,7 +151,7 @@ class Route
     );
   }
 
-  public static function getVariablesFromRequest(string $URI, string $requestURI): null | array
+  private static function getVariablesFromRequest(string $URI, string $requestURI): null | array
   {
     $mappings = [];
     $requestSections = explode("/", $URI);
@@ -172,7 +172,7 @@ class Route
   }
 
 
-  public static function getMatchingRoute(array $routes, string $requestURI)
+  private static function getMatchingRoute(array $routes, string $requestURI)
   {
     // Iterate over the routes to find a match for the request URI.
     foreach ($routes as $route) {

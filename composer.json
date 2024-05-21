@@ -3,7 +3,7 @@
   "description": "A Nest Framework!",
   "type": "library",
   "license": "MIT",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "autoload": {
     "psr-4": {
       "Nest\\Framework\\": "src/"

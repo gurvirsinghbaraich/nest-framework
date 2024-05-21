@@ -8,6 +8,21 @@ class Request implements RequestContract
 {
   private static array $params = [];
 
+  public function __construct()
+  {
+    $requestMethod = Request::method();
+    if (!($requestMethod === "GET" || $requestMethod === "POST")) {
+      return;
+    }
+
+    $arguments = $requestMethod === "GET" ? $_GET : $_POST;
+
+    foreach ($arguments as $key => $argument) {
+      Request::setParam($key, $argument);
+    }
+  }
+
+
   /**
    * Gets whether the request has been made 
    * from http or https origin.
@@ -61,5 +76,14 @@ class Request implements RequestContract
   public function __set($name, $value)
   {
     Request::$params[$name] = $value;
+  }
+
+  public function __get($name)
+  {
+    if (isset(Request::$params[$name])) {
+      return Request::$params[$name];
+    }
+
+    return null;
   }
 }
